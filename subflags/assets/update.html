@@ -1,0 +1,18 @@
+{% extends "admin/challenges/update.html" %}
+
+{% block footer %}
+	<!-- adds div and title for subflag section at the bottom of the page -->
+	<div id="subflags" name="subflags" >
+		<h4 style="margin-top: 75px;">Subflags:</h4>
+	</div>
+
+	<!-- adds button to add a new subflag to the challenge  -->
+	<div id="add-subflag" style="text-align:center">
+			<button class="btn btn-success" style="margin-top: 25px;" id="add-new-subflag" type="button" onclick="add_subflag()">
+				Add New Subflag
+			</button>
+	</div>
+
+	<!-- saves the challenge id in a var to make it accessible in the JavaScript file -->
+	<script> var CHALLENGE_ID = '{{ challenge.id}}' </script>
+{% endblock %}
