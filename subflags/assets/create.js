@@ -3,11 +3,11 @@ CTFd.plugin.run((_CTFd) => {
     const md = _CTFd.lib.markdown()
 })
 
-//adds a count for the number of subflags
+// Adds counter for the number of the subflags
 var count = 0;
 
-//adds three form input fields (name, flag, order) when the button "Add Subflags" is pressed
-//uses count to differentiate betweet subflags
+// Adds input fields for name, flag, order when the button "Add Subflags" is clicked
+// Uses count to differentiate betweet subflags
 $("#add-new-subflag").click(function () {
     var key = `<div class="form-group">
                   <label>Subflag</label>
