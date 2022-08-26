@@ -1,9 +1,7 @@
 {% extends "admin/challenges/create.html" %}
 
 {% block header %}
-    <!-- 
-        Adds a header to the top of the page to briefly inform the admin about the functionality of the subflag implementation
-    -->
+    <!-- Adds a header to the top of the page to briefly inform the admin about the functionality of the subflag implementation -->
     <div class="alert alert-secondary" role="alert">
         Subflag Challenges add functionality to show the user multiple additional flags under the main flag. This is used to guide players through a challenge. <br>
         At this point the Subflags are only optional and not required to solve the challenge. 
@@ -12,7 +10,7 @@
 
 
 {% block value %}
-    <!-- original implementation for the value attribute of the challenge -->
+    <!-- Original implementation for the value attribute of the challenge -->
     <div class="form-group">
         <label>
             Value:<br>
@@ -20,13 +18,13 @@
                 The value of your challenge
             </small>
         </label>
-        <input type="number" class="form-control" name="value" placeholder="Enter challenge Value">
+        <input type="number" class="form-control" name="value" placeholder="Enter Challenge Value">
     </div>
 
-    <!-- adds a placeholder div to insert the subflag information fields and adds a button that calls the "add-new-subflag" function in the JavaScript file-->
+    <!-- Placeholder div to insert the subflag information fields and adds a button that calls the "add-new-subflag" function in the JavaScript file -->
     <div id="subflag_list" name="subflag_list"></div>
     <div style="text-align:center">
-        <button class="btn btn-theme btn-outlined" id="add-new-subflag" type="button">Add New Subflag</button>
+        <button class="btn btn-theme btn-outlined" id="add-new-subflag" type="button">Add new Subflag</button>
     </div>
 {% endblock %}
 
