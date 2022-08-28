@@ -1,18 +1,23 @@
 // creates a array to store the ids of all used hints
 var used_hints = [];
+//jqXHR.setRequestHeader('CSRF-Token', CTFd.config.csrfNonce);
 
 CTFd.plugin.run((_CTFd) => {
     const $ = _CTFd.lib.$
     const md = _CTFd.lib.markdown()
     $(document).ready(function() {
-        // calls the insert_subflag function when the page is loaded
+        // add CSRF Token to request headers
+        $.ajaxPrefilter(function (options, originalOptions, jqXHR) {            
+            jqXHR.setRequestHeader('Accept', "application/json");
+        });
+        // run insert_subflags when the page is loaded
         insert_subflags();
     });
 });
 
-// inserts the subflags into the page
+// inserts the subflags
 function insert_subflags(){
-    // fetches the information needed from the backend needed for the upgrade page
+    // fetches the information needed from the backend
     $.get("/api/v1/get_subflag_upgrade_info", {'id': CHALLENGE_ID }).done( function(data) {
         // pushed the id of all subflags into an array
         let order_array = [];
@@ -172,10 +177,28 @@ function delete_subflag(subflag_id){
 
 //function to add a subflag
 function add_subflag() {
+    // defines the parameters to create a new challenge with
+    let params = {
+        challenge_id: window.CHALLENGE_ID, 
+        subflag_name: "CHANGE ME",
+        subflag_key: "CHANGE ME",
+        subflag_order: 1
+    }
+
     // calls api endpoint to create a new challenge with the name and key "CHANGE_ME" and order 0 and then reloads the page
-    $.get("/api/v1/add_subflag", {"challenge_id": CHALLENGE_ID, "subflag_name": "CHANGE ME", "subflag_key": "CHANGE ME", "subflag_order": 0}).done( function(data) {
-        location.reload();
-    });
+    CTFd.fetch("/api/v1/subflags", {
+        method: "POST",
+        body: JSON.stringify(params)
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                location.reload();
+            }
+            else {
+                alert("something went wrong!")
+            }
+        });
 }
 
 // adds fields to attach a new hint to a specific subflag

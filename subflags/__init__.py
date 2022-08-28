@@ -1,6 +1,7 @@
 from ast import Sub
 from asyncio import constants
 from crypt import methods
+from email import message
 
 from operator import sub
 from sre_constants import SUCCESS
@@ -28,6 +29,7 @@ from CTFd.plugins.challenges import CHALLENGE_CLASSES, BaseChallenge
 from CTFd.plugins.migrations import upgrade
 from CTFd.utils.modes import get_model
 from CTFd.api import CTFd_API_v1
+from CTFd.api.v1.helpers.request import validate_args
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.user import (
     authed,
@@ -39,7 +41,7 @@ from CTFd.utils.user import (
 import json
 from datetime import datetime
 import requests
-
+from CTFd.api.v1.schemas import APIDetailedSuccessResponse
 
 
 # database mdoel for the subflag challenge model (no attributes added)
@@ -211,20 +213,25 @@ class SubflagChallengeType(BaseChallenge):
 
 # endpoint to attach a subflag to a challenge
 # inputs: challenge_id, subflag_name, subflag_key, subflag_order
-add_subflag_namespace = Namespace("add_subflag", description="Endpoint to add a subflag")
-@add_subflag_namespace.route("", methods=['GET'])
+
+subflags_namespace = Namespace("subflags", description="Endpoint to add a subflag")
+
+@subflags_namespace.route("")
 class AddSubflag(Resource):
     """
 	The Purpose of this API Endpoint is to allow an admin to add a single subflag to a challenge
 	"""
     # user has to be authentificated as admin to call this endpoint
+    
     @admins_only
-    def get(self):
+    def post(self):
         # parses request arguements into data
-        data = request.args
+        if request.content_type != "application/json":
+            data = request.form
+        else:
+            data = request.get_json()
 
-        #  only create subflag if all fields are filled out correctly
-        if (data.challenge_id and data.subflag_name and data.subflag_key and data.subflag_order is not None):
+        if (data["challenge_id"] and data["subflag_name"] and data["subflag_key"] and data["subflag_order"] is not None):
             # creates new entry in Subflag table with the request arguments
             subflag = Subflags(
                 challenge_id = data["challenge_id"],
@@ -234,10 +241,10 @@ class AddSubflag(Resource):
             )                
             db.session.add(subflag)
             db.session.commit()
-            return {"success": True, "data": {"message": "challenge created"}}
+            
+            return {"success": True, "data": {"message": "New subflag created"}}
         else:
-            return {"success": False, "data": {"message": "required request argument empty"}}
-
+            return {"success": False, "data": {"message": "at least one input empty"}}
 
 # endpoint to retrieve information necessairy to fill out the update screen of a challenge
 # inputs: challenge id 
@@ -481,5 +488,4 @@ def load(app):
     CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(attach_subflag_hint_namespace, '/attach_subflag_hint')    
     CTFd_API_v1.add_namespace(remove_subflag_hint_namespace, '/remove_subflag_hint')
-    CTFd_API_v1.add_namespace(add_subflag_namespace, '/add_subflag')
-
+    CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
