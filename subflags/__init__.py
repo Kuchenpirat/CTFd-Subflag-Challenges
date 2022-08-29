@@ -420,28 +420,20 @@ class Solve(Resource):
             db.session.commit()
             return {"success": True, "data": {"message": "Subflag solved", "solved": True}}  
 
-       
-# endpoint to delete a subflag submission
-# inputs: subflag_id
-delete_subflag_submission_namespace = Namespace("delete_subflag_submission", description='Endpoint to delete a Subflag submission')
-@delete_subflag_submission_namespace.route("", methods=['GET'])
-class DeleteSubflagSubmission(Resource):
+
     """
     The Purpose of this API Endpoint is to allow users to delete their submission to a subflag
     """
     # user has to be authentificated to call this endpoint
     @authed_only
-    def get(self):
-        # parse request args and get the current team id 
-        data = request.args
+    def delete(self, subflag_id):
         team = get_current_team()
 
         # delete the solve from the database
-        SubflagSolve.query.filter_by(subflag_id = data["subflag_id"], team_id = team.id).delete()
+        SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).delete()
         db.session.commit()
-
         return {"success": True, "data": {"message": "Submission deleted"}} 
-
+       
 
 def load(app):
     upgrade()
@@ -449,5 +441,4 @@ def load(app):
     CHALLENGE_CLASSES["subflags"] = SubflagChallengeType
     register_plugin_assets_directory(app, base_path="/plugins/subflags/assets/")
     # creates all necessairy endpoints
-    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
