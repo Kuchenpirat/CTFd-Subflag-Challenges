@@ -1,15 +1,10 @@
 // creates a array to store the ids of all used hints
 var used_hints = [];
-//jqXHR.setRequestHeader('CSRF-Token', CTFd.config.csrfNonce);
 
 CTFd.plugin.run((_CTFd) => {
     const $ = _CTFd.lib.$
     const md = _CTFd.lib.markdown()
     $(document).ready(function() {
-        // add CSRF Token to request headers
-        $.ajaxPrefilter(function (options, originalOptions, jqXHR) {            
-            jqXHR.setRequestHeader('Accept', "application/json");
-        });
         // run insert_subflags when the page is loaded
         insert_subflags();
     });
@@ -193,7 +188,7 @@ function add_subflag() {
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
-                location.reload();
+                // location.reload();
             }
             else {
                 alert("something went wrong!")
