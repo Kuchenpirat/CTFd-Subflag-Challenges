@@ -33,7 +33,7 @@ function insert_subflags(){
             // creates html code to append a hint to the specified subflag section
             // displays: subflag id, subflag solution, subflag order, button to update the subflag, button to delete the subflag, button to add a hint to the subflag
             let keys = `<div id="subflag` + id + `">
-                            <form id="subflag_update_form" onsubmit="submit_subflag_update(${id}, event)">
+                            <form id="subflag_update_form" onsubmit="update_subflag(${id}, event)">
                                 <label> 
                                     Subflag ID: ` + id + `<br>
                                 </label>
@@ -223,7 +223,7 @@ function add_hint(subflag_id) {
 
     // allows the player to select a hint from the available hints and define the order in which the hint will be displayed in relation to other hints
     $.get("/api/v1/challenges/" + CHALLENGE_ID + "/hints").done( function(data){
-        let insert= `<form id = "add_hint` + subflag_id + `" onsubmit="attach_hint(event)">
+        let insert= `<form id = "add_hint` + subflag_id + `" onsubmit="attach_hint(event, ${subflag_id})">
                         <small class="form-text text-muted">
                             Choose a Hint:
                         </small>
@@ -244,7 +244,6 @@ function add_hint(subflag_id) {
                                 </button>
                             </div>
                         </div>
-                        <input type="text" name="subflag_id" value="` + subflag_id + `" hidden>
                     </form>`;  
         $("#subflaghints" + subflag_id).append(insert);
 
@@ -259,14 +258,26 @@ function add_hint(subflag_id) {
 
 // attaches a hint to a subflag
 // inputs: html form event containing the hint id, subflag id and hint order
-function attach_hint(event) {
+function attach_hint(event, subfllag_id) {
     // prevents to submit button to jump to the specified page
     event.preventDefault();
     const params = $(event.target).serializeJSON(true); 
+
     // calls the api endpoint to attach a hint to a subflag
-    $.get("/api/v1/attach_subflag_hint", {"hint_id": params["hint_id"], "subflag_id": params["subflag_id"], "hint_order": params["hint_order"]}).done(function(data){
-        location.reload();
-    });
+    CTFd.fetch(`/api/v1/subflags/${subfllag_id}/hints`, {
+        method: "POST",
+        body: JSON.stringify(params)
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                location.reload();
+            }
+            else {
+                console.log(data);
+                alert("something went wrong!");
+            }
+        });
 }
 
 // removes a hint from a subflag

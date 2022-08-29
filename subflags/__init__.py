@@ -316,6 +316,27 @@ class Updates(Resource):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
 
+@subflags_namespace.route("/<subflag_id>/hints")
+class Hint(Resource):
+    """
+    The Purpose of this API Endpoint is to allow admins to attach a hint to a specific subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def post(self, subflag_id):
+        #parse request arguements
+        data = request.get_json()
+
+        # creates new entry in subflag hint database
+        subflag_hint = SubflagHint(
+            id = data["hint_id"],
+            subflag_id = subflag_id,
+            hint_order = data["hint_order"],
+        )
+        db.session.add(subflag_hint)
+        db.session.commit()
+        return {"success": True, "data": {"message": "Hint attached"}}
+
 
 # endpoint to retrieve information necessairy to fill out the view the player sees when plaing 
 # inputs: challenge id
@@ -416,29 +437,6 @@ class DeleteSubflagSubmission(Resource):
 
         return {"success": True, "data": {"message": "Submission deleted"}} 
 
-# endpoint to attach a hint to a subflag
-# inputs: hint_id, subflag_id, hint_order
-attach_subflag_hint_namespace = Namespace("attach_subflag_hint", description='Endpoint to attach a hint to a subflag')
-@attach_subflag_hint_namespace.route("", methods=['GET'])
-class AttachSubflagHint(Resource):
-    """
-    The Purpose of this API Endpoint is to allow admins to attach a hint to a specific subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        #parse request arguements
-        data = request.args
-
-        # creates new entry in subflag hint database
-        subflag_hint = SubflagHint(
-            id = data["hint_id"],
-            subflag_id = data["subflag_id"],
-            hint_order = data["hint_order"],
-        )
-        db.session.add(subflag_hint)
-        db.session.commit()
-        return {"sucess": True, "data": {"message": "Subflag attached"}}
 
 # endpoints to remove a hint from a subflag
 # inputs: hint_id
@@ -466,7 +464,6 @@ def load(app):
 
     CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
     CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
-    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
-    CTFd_API_v1.add_namespace(attach_subflag_hint_namespace, '/attach_subflag_hint')    
+    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')   
     CTFd_API_v1.add_namespace(remove_subflag_hint_namespace, '/remove_subflag_hint')
     CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
