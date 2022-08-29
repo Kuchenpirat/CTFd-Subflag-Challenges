@@ -214,15 +214,14 @@ class SubflagChallengeType(BaseChallenge):
 # endpoint to attach a subflag to a challenge
 # inputs: challenge_id, subflag_name, subflag_key, subflag_order
 
-subflags_namespace = Namespace("subflags", description="Endpoint to add a subflag")
+subflags_namespace = Namespace("subflags", description="Endpoint retrieve subflags")
 
 @subflags_namespace.route("")
-class AddSubflag(Resource):
+class Subflag(Resource):
     """
 	The Purpose of this API Endpoint is to allow an admin to add a single subflag to a challenge
 	"""
-    # user has to be authentificated as admin to call this endpoint
-    
+    # user has to be authentificated as admin to call this endpoint    
     @admins_only
     def post(self):
         # parses request arguements into data
@@ -245,6 +244,8 @@ class AddSubflag(Resource):
             return {"success": True, "data": {"message": "New subflag created"}}
         else:
             return {"success": False, "data": {"message": "at least one input empty"}}
+
+
 
 # endpoint to retrieve information necessairy to fill out the update screen of a challenge
 # inputs: challenge id 
