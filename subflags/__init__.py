@@ -459,6 +459,5 @@ def load(app):
 
     CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
     CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
-    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')   
-    CTFd_API_v1.add_namespace(remove_subflag_hint_namespace, '/remove_subflag_hint')
+    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
