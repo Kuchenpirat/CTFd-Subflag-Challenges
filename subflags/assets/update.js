@@ -33,14 +33,13 @@ function insert_subflags(){
             // creates html code to append a hint to the specified subflag section
             // displays: subflag id, subflag solution, subflag order, button to update the subflag, button to delete the subflag, button to add a hint to the subflag
             let keys = `<div id="subflag` + id + `">
-                            <form id="subflag_update_form" onsubmit="submit_subflag_update(event)">
+                            <form id="subflag_update_form" onsubmit="update_subflag(${id}, event)">
                                 <label> 
                                     Subflag ID: ` + id + `<br>
                                 </label>
                                 <small class="form-text text-muted">
                                     The Subflag Name:
                                 </small>
-                                <input type="text" class="form-control chal" name="subflag_id" value="` + id + `" hidden>
                                 <input type="text" class="form-control chal" name="subflag_name" value="` + name + `" required>
                                 <small class="form-text text-muted">
                                     The Subflag Key:
@@ -148,17 +147,26 @@ function insert_subflag_hints(subflag_id, subflag_hintdata){
 
 // function to submit the changes made to a subflag
 // inputs: event from the update form containing: subflag id, name, key, order
-function submit_subflag_update(event){
+function update_subflag(subflag_id, event){
     event.preventDefault();
-    const params = $(event.target).serializeJSON(true);
-    let subflag_id = params["subflag_id"];
-    let subflag_name = params["subflag_name"];
-    let subflag_key = params["subflag_key"];
-    let subflag_order = params["subflag_order"];
-    // calls api endpoint to submit the update and reloads the page
-    $.get("/api/v1/update_subflag", {'subflag_id': subflag_id, 'subflag_name': subflag_name, 'subflag_key': subflag_key, 'subflag_order': subflag_order}).done( function(data) {
-        location.reload();
-    });
+    let params = $(event.target).serializeJSON(true);
+    console.log(subflag_id);
+    console.log(params);
+    // calls api endpoint to create a new challenge with the name and key "CHANGE_ME" and order 0 and then reloads the page
+    CTFd.fetch(`/api/v1/subflags/${subflag_id}`, {
+        method: "PATCH",
+        body: JSON.stringify(params)
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                location.reload();
+            }
+            else {
+                console.log(data);
+                alert("something went wrong!");
+            }
+        });
 }
 
 // function to delete a subflag
@@ -188,10 +196,11 @@ function add_subflag() {
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
-                // location.reload();
+                location.reload();
             }
             else {
-                alert("something went wrong!")
+                console.log(data);
+                alert("something went wrong!");
             }
         });
 }
