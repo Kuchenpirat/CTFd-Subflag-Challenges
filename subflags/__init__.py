@@ -273,7 +273,6 @@ class Subflag(Resource):
         return {"success": True, "data": {"message": "sucessfully updated"}}
 
 
-
 # endpoint to retrieve information necessairy to fill out the update screen of a challenge
 # inputs: challenge id 
 get_subflag_upgrade_info_namespace = Namespace("get_subflag_upgrade_info", description='Endpoint to retrieve subflag info including key')
@@ -384,36 +383,7 @@ class SolveSubflag(Resource):
             db.session.commit()
             return {"response": True, "text": "solved"}
 
-# endpoint to update a subflag
-# inputs: subflag_id, subflag_name, subflag_key, subflag_order
-update_subflag_namespace = Namespace("update_subflag", description='Endpoint to post updates to a subflag')
-@update_subflag_namespace.route("", methods=['GET'])
-class UpdateSubflag(Resource):
-    """
-    The Purpose of this API Endpoint is to post updates to a subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request arguments
-        data = request.args
-        # get subflag from database
-        subflag = Subflags.query.filter_by(id = data["subflag_id"]).first()
-
-        # update subflag data entries if the entry field are not empty 
-        if len(data["subflag_name"]) != 0:
-            subflag.subflag_name = data["subflag_name"]        
-        if len(data["subflag_key"]) != 0:
-            subflag.subflag_key = data["subflag_key"]
-        number = int(data["subflag_order"])
-        if isinstance(number, int):
-            subflag.subflag_order = number
-
-        db.session.add(subflag)
-        db.session.commit()
-
-        return {"success": True, "data": {"message": "sucessfully updated"}}
-        
+       
 # endpoint to delete a subflag
 # inputs: subflag_id
 delete_subflag_namespace = Namespace("delete_subflag", description='Endpoint to delete a subflag')
@@ -511,7 +481,6 @@ def load(app):
     CTFd_API_v1.add_namespace(get_subflag_upgrade_info_namespace, '/get_subflag_upgrade_info')
     CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
     CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
-    CTFd_API_v1.add_namespace(update_subflag_namespace, '/update_subflag')
     CTFd_API_v1.add_namespace(delete_subflag_namespace, '/delete_subflag')
     CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(attach_subflag_hint_namespace, '/attach_subflag_hint')    
