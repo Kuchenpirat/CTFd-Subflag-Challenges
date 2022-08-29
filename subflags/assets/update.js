@@ -284,9 +284,19 @@ function attach_hint(event) {
 // removes a hint from a subflag
 // inputs: hint id
 function remove_hint(hint_id) {
-    // calls api endpoint that removes the hint from the subflag with the hint id
-    $.get("/api/v1/remove_subflag_hint", {"hint_id": hint_id}).done(function(data){
-        // reloads the page
-        location.reload();
-    });
+
+    // calls the api endpoint to attach a hint to a subflag
+    CTFd.fetch(`/api/v1/subflags/hints/${hint_id}`, {
+        method: "DELETE",
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                location.reload();
+            }
+            else {
+                console.log(data);
+                alert("something went wrong!");
+            }
+        });
 }

@@ -338,6 +338,18 @@ class Hint(Resource):
         return {"success": True, "data": {"message": "Hint attached"}}
 
 
+    """
+    The Purpose of this API Endpoint is to allow admins to delete a hint from a specific subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def delete(self, hint_id):
+        # deletes subflag hint 
+        SubflagHint.query.filter_by(id = hint_id).delete()
+        db.session.commit()
+        return {"success": True, "data": {"message": "Subflag removed"}}
+
+
 # endpoint to retrieve information necessairy to fill out the view the player sees when plaing 
 # inputs: challenge id
 get_subflag_view_info_namespace = Namespace("get_subflag_view_info", description='Endpoint to retrieve subflag info without key')
@@ -436,23 +448,6 @@ class DeleteSubflagSubmission(Resource):
         db.session.commit()
 
         return {"success": True, "data": {"message": "Submission deleted"}} 
-
-
-# endpoints to remove a hint from a subflag
-# inputs: hint_id
-remove_subflag_hint_namespace = Namespace("remove_subflag_hint", description='Endpoint to remove a hint from a subflag')
-@remove_subflag_hint_namespace.route("", methods=['GET'])
-class RemoveSubflagHint(Resource):
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request arguments
-        data = request.args
-
-        # deletes subflag hint 
-        SubflagHint.query.filter_by(id = data["hint_id"]).delete()
-        db.session.commit()
-        return {"sucess": True, "data": {"message": "Subflag removed"}}
 
 
 def load(app):
