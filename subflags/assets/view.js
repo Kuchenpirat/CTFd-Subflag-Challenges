@@ -34,7 +34,7 @@ function insert_subflags(){
   let challenge_id = parseInt(CTFd.lib.$('#challenge-id').val())
 
   // gets the info needed for the subflag view from the api endpoint
-  $.get("/api/v1/get_subflag_view_info", {'id': challenge_id }).done( function(data) {
+  $.get(`/api/v1/subflags/challenges/${challenge_id}/view`).done( function(data) {
     // inserts a div to insert the subflags into
     $("#subflags_block").append(`<div id="subflags" name="subflags"></div>`)
 
