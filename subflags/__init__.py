@@ -316,21 +316,21 @@ class Updates(Resource):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
 
-@subflags_namespace.route("/<subflag_id>/hints")
+@subflags_namespace.route("/hints/<hint_id>")
 class Hint(Resource):
     """
     The Purpose of this API Endpoint is to allow admins to attach a hint to a specific subflag
     """
     # user has to be authentificated as admin to call this endpoint
     @admins_only
-    def post(self, subflag_id):
+    def post(self, hint_id):
         #parse request arguements
         data = request.get_json()
 
         # creates new entry in subflag hint database
         subflag_hint = SubflagHint(
-            id = data["hint_id"],
-            subflag_id = subflag_id,
+            id = hint_id,
+            subflag_id = data["subflag_id"],
             hint_order = data["hint_order"],
         )
         db.session.add(subflag_hint)

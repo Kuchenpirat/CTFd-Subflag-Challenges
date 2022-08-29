@@ -223,7 +223,7 @@ function add_hint(subflag_id) {
 
     // allows the player to select a hint from the available hints and define the order in which the hint will be displayed in relation to other hints
     $.get("/api/v1/challenges/" + CHALLENGE_ID + "/hints").done( function(data){
-        let insert= `<form id = "add_hint` + subflag_id + `" onsubmit="attach_hint(event, ${subflag_id})">
+        let insert= `<form id = "add_hint` + subflag_id + `" onsubmit="attach_hint(event)">
                         <small class="form-text text-muted">
                             Choose a Hint:
                         </small>
@@ -244,6 +244,7 @@ function add_hint(subflag_id) {
                                 </button>
                             </div>
                         </div>
+                        <input type="text" name="subflag_id" value="` + subflag_id + `" hidden>
                     </form>`;  
         $("#subflaghints" + subflag_id).append(insert);
 
@@ -258,13 +259,13 @@ function add_hint(subflag_id) {
 
 // attaches a hint to a subflag
 // inputs: html form event containing the hint id, subflag id and hint order
-function attach_hint(event, subfllag_id) {
+function attach_hint(event) {
     // prevents to submit button to jump to the specified page
     event.preventDefault();
     const params = $(event.target).serializeJSON(true); 
 
     // calls the api endpoint to attach a hint to a subflag
-    CTFd.fetch(`/api/v1/subflags/${subfllag_id}/hints`, {
+    CTFd.fetch(`/api/v1/subflags/hints/${params.hint_id}`, {
         method: "POST",
         body: JSON.stringify(params)
     })
