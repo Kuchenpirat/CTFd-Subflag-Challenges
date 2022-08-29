@@ -1,6 +1,7 @@
 from ast import Sub
 from asyncio import constants
 from crypt import methods
+from email import message
 
 from operator import sub
 from sre_constants import SUCCESS
@@ -28,6 +29,7 @@ from CTFd.plugins.challenges import CHALLENGE_CLASSES, BaseChallenge
 from CTFd.plugins.migrations import upgrade
 from CTFd.utils.modes import get_model
 from CTFd.api import CTFd_API_v1
+from CTFd.api.v1.helpers.request import validate_args
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.user import (
     authed,
@@ -39,7 +41,7 @@ from CTFd.utils.user import (
 import json
 from datetime import datetime
 import requests
-
+from CTFd.api.v1.schemas import APIDetailedSuccessResponse
 
 
 # database mdoel for the subflag challenge model (no attributes added)
@@ -211,20 +213,24 @@ class SubflagChallengeType(BaseChallenge):
 
 # endpoint to attach a subflag to a challenge
 # inputs: challenge_id, subflag_name, subflag_key, subflag_order
-add_subflag_namespace = Namespace("add_subflag", description="Endpoint to add a subflag")
-@add_subflag_namespace.route("", methods=['GET'])
-class AddSubflag(Resource):
+
+subflags_namespace = Namespace("subflags", description="Endpoint retrieve subflags")
+
+@subflags_namespace.route("")
+class Subflag(Resource):
     """
 	The Purpose of this API Endpoint is to allow an admin to add a single subflag to a challenge
 	"""
-    # user has to be authentificated as admin to call this endpoint
+    # user has to be authentificated as admin to call this endpoint    
     @admins_only
-    def get(self):
+    def post(self):
         # parses request arguements into data
-        data = request.args
+        if request.content_type != "application/json":
+            data = request.form
+        else:
+            data = request.get_json()
 
-        #  only create subflag if all fields are filled out correctly
-        if (data.challenge_id and data.subflag_name and data.subflag_key and data.subflag_order is not None):
+        if (data["challenge_id"] and data["subflag_name"] and data["subflag_key"] and data["subflag_order"] is not None):
             # creates new entry in Subflag table with the request arguments
             subflag = Subflags(
                 challenge_id = data["challenge_id"],
@@ -234,27 +240,65 @@ class AddSubflag(Resource):
             )                
             db.session.add(subflag)
             db.session.commit()
-            return {"success": True, "data": {"message": "challenge created"}}
+            
+            return {"success": True, "data": {"message": "New subflag created"}}
         else:
-            return {"success": False, "data": {"message": "required request argument empty"}}
+            return {"success": False, "data": {"message": "at least one input empty"}}
+
+@subflags_namespace.route("/<subflag_id>")
+class Subflag(Resource):
+    """
+    The Purpose of this API Endpoint is to allow an admin to update a single subflag
+    """
+    @admins_only
+    def patch(self, subflag_id):
+        # parse request arguments
+        data = request.get_json()
+        print(data)
+        # get subflag from database
+        subflag = Subflags.query.filter_by(id = subflag_id).first()
+
+        # update subflag data entries if the entry field are not empty 
+        if len(data["subflag_name"]) != 0:
+            subflag.subflag_name = data["subflag_name"]        
+        if len(data["subflag_key"]) != 0:
+            subflag.subflag_key = data["subflag_key"]
+        number = int(data["subflag_order"])
+        if isinstance(number, int):
+            subflag.subflag_order = number
+
+        db.session.add(subflag)
+        db.session.commit()
+
+        return {"success": True, "data": {"message": "sucessfully updated"}}
 
 
-# endpoint to retrieve information necessairy to fill out the update screen of a challenge
-# inputs: challenge id 
-get_subflag_upgrade_info_namespace = Namespace("get_subflag_upgrade_info", description='Endpoint to retrieve subflag info including key')
-@get_subflag_upgrade_info_namespace.route("", methods=['GET'])
-class GetSubflagUpgradeInfo(Resource):
+    """
+    The Purpose of this API Endpoint is to allow admins to delete a subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def delete(self, subflag_id):
+
+        # delete associated hints, solved and the subflag itself
+        SubflagHint.query.filter_by(subflag_id = subflag_id).delete
+        SubflagSolve.query.filter_by(subflag_id = subflag_id).delete()
+        Subflags.query.filter_by(id = subflag_id).delete()
+
+        db.session.commit()
+
+        return {"success": True, "data": {"message": "Subflag deleted"}}
+
+@subflags_namespace.route("/challenges/<chal_id>/update")
+class Updates(Resource):
     """
 	The Purpose of this API Endpoint is to allow an admin to view the Subflags (including the key) in the upgrade screen
 	"""
     # user has to be authentificated as admin to call this endpoint
     @admins_only
-    def get(self):
-        # parses challenge id from request arguements
-        id = request.args.get('id')
+    def get(self, chal_id):
         # searches for all subflags connected to the challenge
-        subflag_data = Subflags.query.filter_by(challenge_id = id).all()
-        
+        subflag_data = Subflags.query.filter_by(challenge_id = chal_id).all()        
         
         # return a json containng for each subflag: name, key, order, hints
         # where hints includes the id of all hints and the order they are supposed to be in
@@ -272,23 +316,53 @@ class GetSubflagUpgradeInfo(Resource):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
 
-# endpoint to retrieve information necessairy to fill out the view the player sees when plaing 
-# inputs: challenge id
-get_subflag_view_info_namespace = Namespace("get_subflag_view_info", description='Endpoint to retrieve subflag info without key')
-@get_subflag_view_info_namespace.route("", methods=['GET'])
-class GetSubflagViewInfo(Resource):
+@subflags_namespace.route("/hints/<hint_id>")
+class Hint(Resource):
+    """
+    The Purpose of this API Endpoint is to allow admins to attach a hint to a specific subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def post(self, hint_id):
+        #parse request arguements
+        data = request.get_json()
+
+        # creates new entry in subflag hint database
+        subflag_hint = SubflagHint(
+            id = hint_id,
+            subflag_id = data["subflag_id"],
+            hint_order = data["hint_order"],
+        )
+        db.session.add(subflag_hint)
+        db.session.commit()
+        return {"success": True, "data": {"message": "Hint attached"}}
+
+
+    """
+    The Purpose of this API Endpoint is to allow admins to delete a hint from a specific subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def delete(self, hint_id):
+        # deletes subflag hint 
+        SubflagHint.query.filter_by(id = hint_id).delete()
+        db.session.commit()
+        return {"success": True, "data": {"message": "Subflag removed"}}
+
+@subflags_namespace.route("/challenges/<chal_id>/view")
+class Views(Resource):
     """
 	The Purpose of this API Endpoint is to allow an user to see the subflags when solving a challenge. 
 	"""
     # user has to be authentificated to call this endpoint
     @authed_only
-    def get(self):
+    def get(self, chal_id):
         # parse challenge id from request arguments
         id = request.args.get('id')
         # get team id from the user that called the endpoint
         team = get_current_team()
         # searches for all subflags connected to the challenge
-        subflag_data = Subflags.query.filter_by(challenge_id = id).all()
+        subflag_data = Subflags.query.filter_by(challenge_id = chal_id).all()
 
         # return a json containg for each subflag: subflag_id, name, order, whether the subflag has been solved by the users team, hints
         # where hints includes the id of all hints and the order they are supposed to be in
@@ -308,164 +382,58 @@ class GetSubflagViewInfo(Resource):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
 
-# endpoint to post a subflag solve 
-# inputs: subflag_id, answer
-solve_subflag_namespace = Namespace("solve_subflag", description='Endpoint to attempt a subflag')
-@solve_subflag_namespace.route("", methods=['GET'])
-class SolveSubflag(Resource):
+@subflags_namespace.route("/solve/<subflag_id>")
+class Solve(Resource):
     """
 	The Purpose of this API Endpoint is to allow an user to post a solve atempt. 
 	"""
     # user has to be authentificated to call this endpoint
     @authed_only
-    def get(self):
+    def post(self, subflag_id):
         # parse request arguements 
-        data = request.args
+        data = request.get_json()
 
         # pulls the right key from the database
-        right_key = Subflags.query.filter_by(id = data["subflag_id"]).first()
+        right_key = Subflags.query.filter_by(id = subflag_id).first()
         
         # if the key is not right return an error message
         if right_key.subflag_key != data["answer"]:
-            return {"response": False, "data": {"message": "False Attempt"}}
+            return {"success": True, "data": {"message": "False Attempt", "solved": False}}
 
         #  if the challenge was already solved return a error message
         team = get_current_team()
-        solved = SubflagSolve.query.filter_by(subflag_id = data["subflag_id"], team_id = team.id).first() is not None
+        solved = SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).first() is not None
         if solved:
             print("Subflag: already solved")
-            return {"response": True, "data": {"message": "was already solved"}}
+            return {"success": True, "data": {"message": "was already solved", "solved": True}}
         
         # if the key is correct and the flag was not already solved
         # add solve to database and return true
         else:            
             user = get_current_user()
             solve = SubflagSolve(
-                subflag_id = data["subflag_id"],
+                subflag_id =subflag_id,
                 team_id = team.id,
                 user_id = user.account_id,
             )
             db.session.add(solve)
             db.session.commit()
-            return {"response": True, "text": "solved"}
+            return {"success": True, "data": {"message": "Subflag solved", "solved": True}}  
 
-# endpoint to update a subflag
-# inputs: subflag_id, subflag_name, subflag_key, subflag_order
-update_subflag_namespace = Namespace("update_subflag", description='Endpoint to post updates to a subflag')
-@update_subflag_namespace.route("", methods=['GET'])
-class UpdateSubflag(Resource):
-    """
-    The Purpose of this API Endpoint is to post updates to a subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request arguments
-        data = request.args
-        # get subflag from database
-        subflag = Subflags.query.filter_by(id = data["subflag_id"]).first()
 
-        # update subflag data entries if the entry field are not empty 
-        if len(data["subflag_name"]) != 0:
-            subflag.subflag_name = data["subflag_name"]        
-        if len(data["subflag_key"]) != 0:
-            subflag.subflag_key = data["subflag_key"]
-        number = int(data["subflag_order"])
-        if isinstance(number, int):
-            subflag.subflag_order = number
-
-        db.session.add(subflag)
-        db.session.commit()
-
-        return {"success": True, "data": {"message": "sucessfully updated"}}
-        
-# endpoint to delete a subflag
-# inputs: subflag_id
-delete_subflag_namespace = Namespace("delete_subflag", description='Endpoint to delete a subflag')
-@delete_subflag_namespace.route("", methods=['GET'])
-class UpdateSubflag(Resource):
-    """
-    The Purpose of this API Endpoint is to allow admins to delete a subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request args
-        data = request.args
-
-        # retrieve subflag
-        subflag= Subflags.query.filter_by(id = data["subflag_id"]).first()
-
-        # delete associated hints, solved and the subflag itself
-        SubflagHint.query.filter_by(subflag_id = data["subflag_id"]).delete
-        SubflagSolve.query.filter_by(subflag_id = data["subflag_id"]).delete()
-        Subflags.query.filter_by(id = data["subflag_id"]).delete()
-
-        db.session.commit()
-
-        return {"success": True, "data": {"message": "Subflag deleted"}}
-
-# endpoint to delete a subflag submission
-# inputs: subflag_id
-delete_subflag_submission_namespace = Namespace("delete_subflag_submission", description='Endpoint to delete a Subflag submission')
-@delete_subflag_submission_namespace.route("", methods=['GET'])
-class DeleteSubflagSubmission(Resource):
     """
     The Purpose of this API Endpoint is to allow users to delete their submission to a subflag
     """
     # user has to be authentificated to call this endpoint
     @authed_only
-    def get(self):
-        # parse request args and get the current team id 
-        data = request.args
+    def delete(self, subflag_id):
         team = get_current_team()
 
         # delete the solve from the database
-        SubflagSolve.query.filter_by(subflag_id = data["subflag_id"], team_id = team.id).delete()
+        SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).delete()
         db.session.commit()
-
         return {"success": True, "data": {"message": "Submission deleted"}} 
-
-# endpoint to attach a hint to a subflag
-# inputs: hint_id, subflag_id, hint_order
-attach_subflag_hint_namespace = Namespace("attach_subflag_hint", description='Endpoint to attach a hint to a subflag')
-@attach_subflag_hint_namespace.route("", methods=['GET'])
-class AttachSubflagHint(Resource):
-    """
-    The Purpose of this API Endpoint is to allow admins to attach a hint to a specific subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        #parse request arguements
-        data = request.args
-
-        # creates new entry in subflag hint database
-        subflag_hint = SubflagHint(
-            id = data["hint_id"],
-            subflag_id = data["subflag_id"],
-            hint_order = data["hint_order"],
-        )
-        db.session.add(subflag_hint)
-        db.session.commit()
-        return {"sucess": True, "data": {"message": "Subflag attached"}}
-
-# endpoints to remove a hint from a subflag
-# inputs: hint_id
-remove_subflag_hint_namespace = Namespace("remove_subflag_hint", description='Endpoint to remove a hint from a subflag')
-@remove_subflag_hint_namespace.route("", methods=['GET'])
-class RemoveSubflagHint(Resource):
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request arguments
-        data = request.args
-
-        # deletes subflag hint 
-        SubflagHint.query.filter_by(id = data["hint_id"]).delete()
-        db.session.commit()
-        return {"sucess": True, "data": {"message": "Subflag removed"}}
-
+       
 
 def load(app):
     upgrade()
@@ -473,13 +441,4 @@ def load(app):
     CHALLENGE_CLASSES["subflags"] = SubflagChallengeType
     register_plugin_assets_directory(app, base_path="/plugins/subflags/assets/")
     # creates all necessairy endpoints
-    CTFd_API_v1.add_namespace(get_subflag_upgrade_info_namespace, '/get_subflag_upgrade_info')
-    CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
-    CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
-    CTFd_API_v1.add_namespace(update_subflag_namespace, '/update_subflag')
-    CTFd_API_v1.add_namespace(delete_subflag_namespace, '/delete_subflag')
-    CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
-    CTFd_API_v1.add_namespace(attach_subflag_hint_namespace, '/attach_subflag_hint')    
-    CTFd_API_v1.add_namespace(remove_subflag_hint_namespace, '/remove_subflag_hint')
-    CTFd_API_v1.add_namespace(add_subflag_namespace, '/add_subflag')
-
+    CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
