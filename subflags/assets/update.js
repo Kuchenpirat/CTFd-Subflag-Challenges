@@ -13,7 +13,7 @@ CTFd.plugin.run((_CTFd) => {
 // inserts the subflags
 function insert_subflags(){
     // fetches the information needed from the backend
-    $.get("/api/v1/get_subflag_upgrade_info", {'id': CHALLENGE_ID }).done( function(data) {
+    $.get(`/api/v1/subflags/challenges/${CHALLENGE_ID}/update`).done( function(data) {
         // pushed the id of all subflags into an array
         let order_array = [];
         Object.keys(data).forEach(key => {

@@ -289,23 +289,16 @@ class Subflag(Resource):
 
         return {"success": True, "data": {"message": "Subflag deleted"}}
 
-
-# endpoint to retrieve information necessairy to fill out the update screen of a challenge
-# inputs: challenge id 
-get_subflag_upgrade_info_namespace = Namespace("get_subflag_upgrade_info", description='Endpoint to retrieve subflag info including key')
-@get_subflag_upgrade_info_namespace.route("", methods=['GET'])
-class GetSubflagUpgradeInfo(Resource):
+@subflags_namespace.route("/challenges/<chal_id>/update")
+class Updates(Resource):
     """
 	The Purpose of this API Endpoint is to allow an admin to view the Subflags (including the key) in the upgrade screen
 	"""
     # user has to be authentificated as admin to call this endpoint
     @admins_only
-    def get(self):
-        # parses challenge id from request arguements
-        id = request.args.get('id')
+    def get(self, chal_id):
         # searches for all subflags connected to the challenge
-        subflag_data = Subflags.query.filter_by(challenge_id = id).all()
-        
+        subflag_data = Subflags.query.filter_by(challenge_id = chal_id).all()        
         
         # return a json containng for each subflag: name, key, order, hints
         # where hints includes the id of all hints and the order they are supposed to be in
@@ -322,6 +315,7 @@ class GetSubflagUpgradeInfo(Resource):
             for it in range(len(hints)):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
+
 
 # endpoint to retrieve information necessairy to fill out the view the player sees when plaing 
 # inputs: challenge id
@@ -469,7 +463,7 @@ def load(app):
     CHALLENGE_CLASSES["subflags"] = SubflagChallengeType
     register_plugin_assets_directory(app, base_path="/plugins/subflags/assets/")
     # creates all necessairy endpoints
-    CTFd_API_v1.add_namespace(get_subflag_upgrade_info_namespace, '/get_subflag_upgrade_info')
+
     CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
     CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
     CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
