@@ -245,6 +245,33 @@ class Subflag(Resource):
         else:
             return {"success": False, "data": {"message": "at least one input empty"}}
 
+@subflags_namespace.route("/<subflag_id>")
+class Subflag(Resource):
+    """
+    The Purpose of this API Endpoint is to allow an admin to update a single subflag
+    """
+    @admins_only
+    def patch(self, subflag_id):
+        # parse request arguments
+        data = request.get_json()
+        print(data)
+        # get subflag from database
+        subflag = Subflags.query.filter_by(id = subflag_id).first()
+
+        # update subflag data entries if the entry field are not empty 
+        if len(data["subflag_name"]) != 0:
+            subflag.subflag_name = data["subflag_name"]        
+        if len(data["subflag_key"]) != 0:
+            subflag.subflag_key = data["subflag_key"]
+        number = int(data["subflag_order"])
+        if isinstance(number, int):
+            subflag.subflag_order = number
+
+        db.session.add(subflag)
+        db.session.commit()
+
+        return {"success": True, "data": {"message": "sucessfully updated"}}
+
 
 
 # endpoint to retrieve information necessairy to fill out the update screen of a challenge
