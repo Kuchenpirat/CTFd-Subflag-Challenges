@@ -33,7 +33,7 @@ function insert_subflags(){
             // creates html code to append a hint to the specified subflag section
             // displays: subflag id, subflag solution, subflag order, button to update the subflag, button to delete the subflag, button to add a hint to the subflag
             let keys = `<div id="subflag` + id + `">
-                            <form id="subflag_update_form" onsubmit="update_subflag(${id}, event)">
+                            <form id="subflag_update_form" onsubmit="submit_subflag_update(${id}, event)">
                                 <label> 
                                     Subflag ID: ` + id + `<br>
                                 </label>
@@ -152,7 +152,7 @@ function update_subflag(subflag_id, event){
     let params = $(event.target).serializeJSON(true);
     console.log(subflag_id);
     console.log(params);
-    // calls api endpoint to create a new challenge with the name and key "CHANGE_ME" and order 0 and then reloads the page
+    // calls api endpoint to update the subflag with the form input fields
     CTFd.fetch(`/api/v1/subflags/${subflag_id}`, {
         method: "PATCH",
         body: JSON.stringify(params)
@@ -172,10 +172,20 @@ function update_subflag(subflag_id, event){
 // function to delete a subflag
 // input: subflag id
 function delete_subflag(subflag_id){
-    // calls api endpoint to delete subflag and reloads the page
-    $.get("/api/v1/delete_subflag", {'subflag_id': subflag_id}).done( function(data) {
-        location.reload();
-    });
+    // calls api endpoint to delete a subflag with the subflag id
+    CTFd.fetch(`/api/v1/subflags/${subflag_id}`, {
+        method: "DELETE",
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                location.reload();
+            }
+            else {
+                console.log(data);
+                alert("something went wrong!");
+            }
+        });
 }
 
 //function to add a subflag

@@ -273,6 +273,23 @@ class Subflag(Resource):
         return {"success": True, "data": {"message": "sucessfully updated"}}
 
 
+    """
+    The Purpose of this API Endpoint is to allow admins to delete a subflag
+    """
+    # user has to be authentificated as admin to call this endpoint
+    @admins_only
+    def delete(self, subflag_id):
+
+        # delete associated hints, solved and the subflag itself
+        SubflagHint.query.filter_by(subflag_id = subflag_id).delete
+        SubflagSolve.query.filter_by(subflag_id = subflag_id).delete()
+        Subflags.query.filter_by(id = subflag_id).delete()
+
+        db.session.commit()
+
+        return {"success": True, "data": {"message": "Subflag deleted"}}
+
+
 # endpoint to retrieve information necessairy to fill out the update screen of a challenge
 # inputs: challenge id 
 get_subflag_upgrade_info_namespace = Namespace("get_subflag_upgrade_info", description='Endpoint to retrieve subflag info including key')
@@ -384,32 +401,6 @@ class SolveSubflag(Resource):
             return {"response": True, "text": "solved"}
 
        
-# endpoint to delete a subflag
-# inputs: subflag_id
-delete_subflag_namespace = Namespace("delete_subflag", description='Endpoint to delete a subflag')
-@delete_subflag_namespace.route("", methods=['GET'])
-class UpdateSubflag(Resource):
-    """
-    The Purpose of this API Endpoint is to allow admins to delete a subflag
-    """
-    # user has to be authentificated as admin to call this endpoint
-    @admins_only
-    def get(self):
-        # parse request args
-        data = request.args
-
-        # retrieve subflag
-        subflag= Subflags.query.filter_by(id = data["subflag_id"]).first()
-
-        # delete associated hints, solved and the subflag itself
-        SubflagHint.query.filter_by(subflag_id = data["subflag_id"]).delete
-        SubflagSolve.query.filter_by(subflag_id = data["subflag_id"]).delete()
-        Subflags.query.filter_by(id = data["subflag_id"]).delete()
-
-        db.session.commit()
-
-        return {"success": True, "data": {"message": "Subflag deleted"}}
-
 # endpoint to delete a subflag submission
 # inputs: subflag_id
 delete_subflag_submission_namespace = Namespace("delete_subflag_submission", description='Endpoint to delete a Subflag submission')
@@ -481,7 +472,6 @@ def load(app):
     CTFd_API_v1.add_namespace(get_subflag_upgrade_info_namespace, '/get_subflag_upgrade_info')
     CTFd_API_v1.add_namespace(get_subflag_view_info_namespace, '/get_subflag_view_info')
     CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
-    CTFd_API_v1.add_namespace(delete_subflag_namespace, '/delete_subflag')
     CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(attach_subflag_hint_namespace, '/attach_subflag_hint')    
     CTFd_API_v1.add_namespace(remove_subflag_hint_namespace, '/remove_subflag_hint')
