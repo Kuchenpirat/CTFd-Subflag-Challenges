@@ -56,7 +56,7 @@ function insert_subflags(){
 
       // if the subflag is already soved -> insert a disabled form field with lightgreen background and an delete button 
       if (subflag_solved_by_me) {
-        var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag_function(event)">
+        var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag(event)">
                       <small class="form-text text-muted">
                         Subflag Name:  ` + name + `
                       </small> 
@@ -75,13 +75,12 @@ function insert_subflags(){
 
       // if the subflag is not yet solved -> insert a formfield with a submit button
       } else {
-        var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag_function(event)">
+        var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag(event, ${id})">
                       <small class="form-text text-muted">
                         Subflag Name:  ` + name + `
                       </small>
                       <div class="row">
                         <div class="col-md-9 form-group">
-                          <input id="subflag-id" name="subflag_id" type="hidden" value=` + id + `>
                           <input type="text" class="form-control chal-subflag_key" name="answer" placeholder="Subflag" required>
                         </div>
                         <div class="col-md-3 form-group" id=submit_subflag style="margin-top: 6px;">
@@ -119,18 +118,26 @@ function move_subflag_hints(subflag_id, hintdata) {
 
 // function to submit a subflag solution (gets called when the player presses submit)
 // input: form event containing: subflag id, answer
-function submit_subflag_function(event){
+function submit_subflag(event, subflag_id){
   // prevents default form behaviour 
   event.preventDefault();
   const params = $(event.target).serializeJSON(true);
-  // temp save for variables used
-  let subflag_id = params["subflag_id"];
-  let answer = params["answer"];
 
-  // calles the api endpoint to submit a solution with the subflag id and answer and reloads the page
-  $.get("/api/v1/solve_subflag", {'subflag_id': subflag_id, 'answer': answer}).done( function(data) {              
-      location.reload();
-  });
+  // calls the api endpoint to post a solve attempt to a subflag
+  CTFd.fetch(`/api/v1/subflags/solve/${subflag_id}`, {
+    method: "POST",
+    body: JSON.stringify(params)
+  })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.data.solved) {
+            location.reload();
+        }
+        else {
+            console.log(data);
+            alert("wrong answer!");
+        }
+    });
 }
 
 // function to delete a correct subflag answer

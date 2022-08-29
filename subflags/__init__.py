@@ -382,48 +382,43 @@ class Views(Resource):
                 subflag_json[id_var]["hints"][hints[it].id] = {"order": hints[it].hint_order}
         return subflag_json
 
-
-
-# endpoint to post a subflag solve 
-# inputs: subflag_id, answer
-solve_subflag_namespace = Namespace("solve_subflag", description='Endpoint to attempt a subflag')
-@solve_subflag_namespace.route("", methods=['GET'])
-class SolveSubflag(Resource):
+@subflags_namespace.route("/solve/<subflag_id>")
+class Solve(Resource):
     """
 	The Purpose of this API Endpoint is to allow an user to post a solve atempt. 
 	"""
     # user has to be authentificated to call this endpoint
     @authed_only
-    def get(self):
+    def post(self, subflag_id):
         # parse request arguements 
-        data = request.args
+        data = request.get_json()
 
         # pulls the right key from the database
-        right_key = Subflags.query.filter_by(id = data["subflag_id"]).first()
+        right_key = Subflags.query.filter_by(id = subflag_id).first()
         
         # if the key is not right return an error message
         if right_key.subflag_key != data["answer"]:
-            return {"response": False, "data": {"message": "False Attempt"}}
+            return {"success": True, "data": {"message": "False Attempt", "solved": False}}
 
         #  if the challenge was already solved return a error message
         team = get_current_team()
-        solved = SubflagSolve.query.filter_by(subflag_id = data["subflag_id"], team_id = team.id).first() is not None
+        solved = SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).first() is not None
         if solved:
             print("Subflag: already solved")
-            return {"response": True, "data": {"message": "was already solved"}}
+            return {"success": True, "data": {"message": "was already solved", "solved": True}}
         
         # if the key is correct and the flag was not already solved
         # add solve to database and return true
         else:            
             user = get_current_user()
             solve = SubflagSolve(
-                subflag_id = data["subflag_id"],
+                subflag_id =subflag_id,
                 team_id = team.id,
                 user_id = user.account_id,
             )
             db.session.add(solve)
             db.session.commit()
-            return {"response": True, "text": "solved"}
+            return {"success": True, "data": {"message": "Subflag solved", "solved": True}}  
 
        
 # endpoint to delete a subflag submission
@@ -454,7 +449,5 @@ def load(app):
     CHALLENGE_CLASSES["subflags"] = SubflagChallengeType
     register_plugin_assets_directory(app, base_path="/plugins/subflags/assets/")
     # creates all necessairy endpoints
-
-    CTFd_API_v1.add_namespace(solve_subflag_namespace, '/solve_subflag')
     CTFd_API_v1.add_namespace(delete_subflag_submission_namespace, '/delete_subflag_submission')
     CTFd_API_v1.add_namespace(subflags_namespace, '/subflags')
