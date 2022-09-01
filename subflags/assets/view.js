@@ -75,10 +75,10 @@ function insert_subflags(){
                             </div>
                         </div>
                     </form>
-                    <div id="subflag_hints_` + id + `"> </div>`;
-          // if the subflag is not yet solved -> insert a formfield with a submit button
-          } else {
-            var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag(event, ${id})">
+                        <div id="subflag_hints_` + id + `"> </div>`;
+            // if the subflag is not yet solved -> insert a formfield with a submit button
+            } else {
+                var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag(event, ${id})">
                     <small class="form-text text-muted">
                         Subflag Name:  ` + name + `
                     </small>
