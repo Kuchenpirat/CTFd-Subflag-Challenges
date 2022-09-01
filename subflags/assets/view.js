@@ -50,8 +50,6 @@ function insert_subflags(){
             $("#subflags").append("<h5>Main Flag:</h5>");
         }
         
-        // inserts a div to insert the subflags into
-        $("#subflags_block").append(`<div id="subflags" name="subflags"></div>`)
 
         // goes through the list of subflag ids
         for (let i = 0; i < order_array.length; i++) {
