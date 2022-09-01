@@ -47,7 +47,7 @@ function insert_subflags(){
 
         // insert subflags headline if at least one subflag exists
         if (order_array.length > 0) {
-            $("#subflags").append("<h5>Main Flag:</h5>");
+            $("#subflags").append("<h5>Optional Subflags:</h5>");
         }
         
 
@@ -106,6 +106,10 @@ function insert_subflags(){
           
           // calls a function to move the hints to the according position
           move_subflag_hints(id, hintdata);
+        }
+        // include headline for main flag at the end
+        if (order_array.length > 0) {
+            $("#subflags").append("<h5>Main Flag:</h5>");
         }
     });
 }
