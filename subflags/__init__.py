@@ -411,11 +411,21 @@ class Solve(Resource):
         # add solve to database and return true
         else:            
             user = get_current_user()
-            solve = SubflagSolve(
-                subflag_id =subflag_id,
-                team_id = team.id,
-                user_id = user.account_id,
-            )
+            
+            # if team mode is enabled then save user and team in the database 
+            if is_teams_mode:
+                solve = SubflagSolve(
+                    subflag_id =subflag_id,
+                    team_id = team.id,
+                    user_id = user.account_id,
+                )
+            # if user mode save team id as user id to the database
+            else:
+                solve = SubflagSolve(
+                    subflag_id=subflag_id,
+                    team_id=user.account_id,
+                    user_id=user.account_id
+                )
             db.session.add(solve)
             db.session.commit()
             return {"success": True, "data": {"message": "Subflag solved", "solved": True}}  
@@ -427,10 +437,16 @@ class Solve(Resource):
     # user has to be authentificated to call this endpoint
     @authed_only
     def delete(self, subflag_id):
-        team = get_current_team()
+        # if team mode filter based on team id 
+        if is_teams_mode:
+            team = get_current_team()
+            SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).delete()
+        # if user mode filter based on user id
+        else:
+            user = get_current_user()
+            SubflagSolve.query.filter_by(subflag_id = subflag_id, user_id = user.account_id).delete()
 
         # delete the solve from the database
-        SubflagSolve.query.filter_by(subflag_id = subflag_id, team_id = team.id).delete()
         db.session.commit()
         return {"success": True, "data": {"message": "Submission deleted"}} 
        
