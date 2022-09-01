@@ -35,8 +35,6 @@ function insert_subflags(){
 
     // gets the info needed for the subflag view from the api endpoint
     $.get(`/api/v1/subflags/challenges/${challenge_id}/view`).done( function(data) {
-        // inserts a div to insert the subflags into
-        $("#subflags_block").append(`<div id="subflags" name="subflags"></div>`)
 
         // creates an array of subflag ids and sorts them according to their order
         let order_array = [];
@@ -46,6 +44,12 @@ function insert_subflags(){
         order_array.sort(function(a,b){
             return data[a]["order"] - data[b]["order"];
         });
+
+        // insert subflags headline if at least one subflag exists
+        if (order_array.length > 0) {
+            $("#subflags").append("<h5>Main Flag:</h5>");
+        }
+        
 
         // goes through the list of subflag ids
         for (let i = 0; i < order_array.length; i++) {
