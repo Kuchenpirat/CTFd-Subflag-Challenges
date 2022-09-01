@@ -26,7 +26,7 @@ function insert_subflags(){
         for (let i = 0; i < len; i++) {
             // temp save for needed variables
             let id = order_array[i];
-            let name = data[id].name;
+            let desc = data[id].desc;
             let key = data[id].key;
             let order = data[id].order;
 
@@ -38,9 +38,9 @@ function insert_subflags(){
                                     Subflag ID: ` + id + `<br>
                                 </label>
                                 <small class="form-text text-muted">
-                                    The Subflag Name:
+                                    The Subflag Description:
                                 </small>
-                                <input type="text" class="form-control chal" name="subflag_name" value="` + name + `" required>
+                                <input type="text" class="form-control chal" name="subflag_description" value="` + desc + `" required>
                                 <small class="form-text text-muted">
                                     The Subflag Key:
                                 </small>
@@ -146,12 +146,11 @@ function insert_subflag_hints(subflag_id, subflag_hintdata){
 }
 
 // function to submit the changes made to a subflag
-// inputs: event from the update form containing: subflag id, name, key, order
+// inputs: event from the update form containing: subflag id, desc, key, order
 function update_subflag(subflag_id, event){
     event.preventDefault();
     let params = $(event.target).serializeJSON(true);
-    console.log(subflag_id);
-    console.log(params);
+
     // calls api endpoint to update the subflag with the form input fields
     CTFd.fetch(`/api/v1/subflags/${subflag_id}`, {
         method: "PATCH",
@@ -193,12 +192,12 @@ function add_subflag() {
     // defines the parameters to create a new challenge with
     let params = {
         challenge_id: window.CHALLENGE_ID, 
-        subflag_name: "CHANGE ME",
+        subflag_desc: "CHANGE ME",
         subflag_key: "CHANGE ME",
         subflag_order: 1
     }
 
-    // calls api endpoint to create a new challenge with the name and key "CHANGE_ME" and order 0 and then reloads the page
+    // calls api endpoint to create a new challenge with the desc and key "CHANGE_ME" and order 0 and then reloads the page
     CTFd.fetch("/api/v1/subflags", {
         method: "POST",
         body: JSON.stringify(params)

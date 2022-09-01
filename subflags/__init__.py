@@ -52,18 +52,18 @@ class SubflagChallenge(Challenges):
         primary_key=True)
 
 # database model for the individual subflag
-# includes: id, reference to the associated challenge, name, key (solution), order
+# includes: id, reference to the associated challenge, desc, key (solution), order
 class Subflags(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     challenge_id = db.Column(db.Integer, 
         db.ForeignKey("challenges.id", ondelete="CASCADE"))
-    subflag_name = db.Column(db.String(128))
+    subflag_desc = db.Column(db.String(128))
     subflag_key = db.Column(db.String(128))
     subflag_order = db.Column(db.Integer)
 
-    def __init__(self, challenge_id, subflag_name, subflag_key, subflag_order):
+    def __init__(self, challenge_id, subflag_desc, subflag_key, subflag_order):
         self.challenge_id = challenge_id
-        self.subflag_name = subflag_name
+        self.subflag_desc = subflag_desc
         self.subflag_key = subflag_key
         self.subflag_order = subflag_order
 
@@ -168,7 +168,7 @@ class SubflagChallengeType(BaseChallenge):
                 # if all fields are filled out create a subflag
                 subflag = Subflags(
                     challenge_id = challenge.id,
-                    subflag_name = subflag_data_list[num_items*num],
+                    subflag_desc = subflag_data_list[num_items*num],
                     subflag_key = subflag_data_list[num_items*num+1],
                     subflag_order = subflag_data_list[num_items*num+2]
                 )
@@ -212,7 +212,7 @@ class SubflagChallengeType(BaseChallenge):
 # API Extensions for Subflags
 
 # endpoint to attach a subflag to a challenge
-# inputs: challenge_id, subflag_name, subflag_key, subflag_order
+# inputs: challenge_id, subflag_desc, subflag_key, subflag_order
 
 subflags_namespace = Namespace("subflags", description="Endpoint retrieve subflags")
 
@@ -230,11 +230,11 @@ class Subflag(Resource):
         else:
             data = request.get_json()
 
-        if (data["challenge_id"] and data["subflag_name"] and data["subflag_key"] and data["subflag_order"] is not None):
+        if (data["challenge_id"] and data["subflag_desc"] and data["subflag_key"] and data["subflag_order"] is not None):
             # creates new entry in Subflag table with the request arguments
             subflag = Subflags(
                 challenge_id = data["challenge_id"],
-                subflag_name = data["subflag_name"],
+                subflag_desc = data["subflag_desc"],
                 subflag_key = data["subflag_key"],
                 subflag_order = data["subflag_order"],
             )                
@@ -259,8 +259,8 @@ class Subflag(Resource):
         subflag = Subflags.query.filter_by(id = subflag_id).first()
 
         # update subflag data entries if the entry field are not empty 
-        if len(data["subflag_name"]) != 0:
-            subflag.subflag_name = data["subflag_name"]        
+        if len(data["subflag_desc"]) != 0:
+            subflag.subflag_desc = data["subflag_desc"]        
         if len(data["subflag_key"]) != 0:
             subflag.subflag_key = data["subflag_key"]
         number = int(data["subflag_order"])
@@ -300,14 +300,14 @@ class Updates(Resource):
         # searches for all subflags connected to the challenge
         subflag_data = Subflags.query.filter_by(challenge_id = chal_id).all()        
         
-        # return a json containng for each subflag: name, key, order, hints
+        # return a json containng for each subflag: desc, key, order, hints
         # where hints includes the id of all hints and the order they are supposed to be in
         subflag_json = {}
         for i in range(len(subflag_data)):
             id_var = str(subflag_data[i].id)
             hints = SubflagHint.query.filter_by(subflag_id = id_var).all()
             subflag_json[id_var]  =  {
-                "name": subflag_data[i].subflag_name,
+                "desc": subflag_data[i].subflag_desc,
                 "key": subflag_data[i].subflag_key,
                 "order": subflag_data[i].subflag_order,
                 "hints": {}
@@ -364,7 +364,7 @@ class Views(Resource):
         # searches for all subflags connected to the challenge
         subflag_data = Subflags.query.filter_by(challenge_id = chal_id).all()
 
-        # return a json containg for each subflag: subflag_id, name, order, whether the subflag has been solved by the users team, hints
+        # return a json containg for each subflag: subflag_id, desc, order, whether the subflag has been solved by the users team, hints
         # where hints includes the id of all hints and the order they are supposed to be in
         subflag_json = {}
         for i in range(len(subflag_data)):
@@ -373,7 +373,7 @@ class Views(Resource):
             solved = SubflagSolve.query.filter_by(subflag_id = id_var, team_id = team.id).first() is not None
             hints = SubflagHint.query.filter_by(subflag_id = id_var).all()
             subflag_json[id_var]  =  {
-                "name": subflag_data[i].subflag_name,
+                "desc": subflag_data[i].subflag_desc,
                 "order": subflag_data[i].subflag_order,
                 "solved": solved,
                 "hints": {},
