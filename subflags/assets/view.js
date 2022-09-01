@@ -53,16 +53,16 @@ function insert_subflags(){
 
         // goes through the list of subflag ids
         for (let i = 0; i < order_array.length; i++) {
-            // temp subflag variables (id, name, whether the subflag is solved by the current team)
+            // temp subflag variables (id, desc, whether the subflag is solved by the current team)
             let id = order_array[i];
-            let name = data[id].name;
+            let desc = data[id].desc;
             let subflag_solved_by_me = data[id].solved
 
             // if the subflag is already soved -> insert a disabled form field with lightgreen background and an delete button 
             if (subflag_solved_by_me) {
                 var keys = `<form id="subflag_form` + id + `">
                         <small class="form-text text-muted">
-                            Subflag Name:  ` + name + `
+                            Subflag Description:  ` + desc + `
                         </small> 
                         <div class="row" style="margin-bottom: 10px;">
                             <div class="col-md-9">
@@ -75,12 +75,12 @@ function insert_subflags(){
                             </div>
                         </div>
                     </form>
-                        <div id="subflag_hints_` + id + `"> </div>`;
+                    <div id="subflag_hints_` + id + `"> </div>`;
             // if the subflag is not yet solved -> insert a formfield with a submit button
             } else {
                 var keys = `<form id="subflag_form` + id + `" onsubmit="submit_subflag(event, ${id})">
                     <small class="form-text text-muted">
-                        Subflag Name:  ` + name + `
+                        Subflag Description:  ` + desc + `
                     </small>
                     <div class="row">
                         <div class="col-md-9 form-group">
