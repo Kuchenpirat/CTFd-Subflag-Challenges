@@ -1,13 +1,4 @@
-from ast import Sub
-from asyncio import constants
-from crypt import methods
-from email import message
-
-from operator import sub
-from sre_constants import SUCCESS
-from unicodedata import category
-from unittest import result
-from flask import jsonify, Blueprint, request # only needed for Blueprint import
+from flask import Blueprint, request # only needed for Blueprint import
 from flask_restx import Namespace, Resource
 
 from CTFd.models import (
@@ -19,7 +10,6 @@ from CTFd.models import (
     Solves,
     Tags,
     db,
-    Teams,
 )
 
 from CTFd.utils.uploads import delete_file #to delete challenge files
@@ -27,21 +17,10 @@ from CTFd.utils.decorators import admins_only, authed_only
 from CTFd.plugins import register_plugin_assets_directory
 from CTFd.plugins.challenges import CHALLENGE_CLASSES, BaseChallenge
 from CTFd.plugins.migrations import upgrade
-from CTFd.utils.modes import get_model
 from CTFd.api import CTFd_API_v1
-from CTFd.api.v1.helpers.request import validate_args
 from CTFd.utils.config import is_teams_mode
-from CTFd.utils.user import (
-    authed,
-    get_current_team,
-    get_current_user,
-    is_admin,
-)
-
-import json
+from CTFd.utils.user import get_current_team, get_current_user
 from datetime import datetime
-import requests
-from CTFd.api.v1.schemas import APIDetailedSuccessResponse
 
 
 # database mdoel for the subflag challenge model (no attributes added)
