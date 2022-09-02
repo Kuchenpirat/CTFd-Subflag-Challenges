@@ -1,1 +1,2 @@
-*.bat
+# generated on CTFd startup
+__pycache__/
