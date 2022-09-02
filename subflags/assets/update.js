@@ -40,7 +40,7 @@ function insert_subflags(){
                                 <small class="form-text text-muted">
                                     The Subflag Description:
                                 </small>
-                                <input type="text" class="form-control chal" name="subflag_description" value="` + desc + `" required>
+                                <input type="text" class="form-control chal" name="subflag_desc" value="` + desc + `" required>
                                 <small class="form-text text-muted">
                                     The Subflag Key:
                                 </small>
