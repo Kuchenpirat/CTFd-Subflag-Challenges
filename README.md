@@ -1,4 +1,4 @@
-# CTFd-Subflags
+# CTFd Subflag Challenges
 
 ## Description
 This Plguin for CTFd allows you to add additional optional subflags under above the main flag of a challenge. This is used to guide players through large challenges and lets them track their process within the challenge. 
